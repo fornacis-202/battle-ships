@@ -51,6 +51,7 @@ int get_user();
 int chose_user(int player_num);
 int score_compare(const void * a1,const void * a2);
 void print_users();
+void save_users();
 
 //main:
 
@@ -65,7 +66,9 @@ int main() {
         scanf("%d", &choice);
         switch (choice) {
             case 1:
+
                 //play with a friend
+            play_with_friend:
                 choice=0;
                 while (!(choice==1 || choice==2)) {
                     cls();
@@ -85,7 +88,7 @@ int main() {
 
                                 printf("\n\tno user yet!\n");
                                 Sleep(1300);
-                                goto main_menu;
+                                goto play_with_friend;
                             }
                             while(chose_user(0)==0);
 
@@ -121,6 +124,7 @@ int main() {
 
                 }
                 //second player
+            second_player:
                 choice=0;
                 while (!(choice==1 || choice==2)) {
                     cls();
@@ -135,11 +139,11 @@ int main() {
                 switch (choice) {
                     case 1:
                         //available users
-                        if(list_length==0){
+                        if(list_length<=1){
 
-                            printf("\n\tno user yet!\n");
+                            printf("\n\tno available user !\n");
                             Sleep(1300);
-                            goto main_menu;
+                            goto second_player;
                         }
                         while(chose_user(1)==0);
 
@@ -181,6 +185,7 @@ int main() {
                 break;
             case 2:
                 //play with bot
+            play_with_bot:
                 choice=0;
                 while (!(choice==1 || choice==2)) {
                     cls();
@@ -197,10 +202,11 @@ int main() {
                         //available users
                         if(list_length==0){
 
-                            printf("\n\tno user yet!\n");
+                            printf("\n\tno available user !\n");
                             Sleep(1300);
-                            goto main_menu;
+                            goto play_with_bot;
                         }
+
                         while(chose_user(1)==0);
 
                         break;
@@ -415,6 +421,7 @@ int make_user(int player_num){
     strcpy(list[list_length-1].name,username);
     list[list_length-1].score=0;
     player[player_num]=list[list_length-1];
+    save_users();
 
     return 1;
 
@@ -432,6 +439,10 @@ int chose_user(int player_num){
         printf("please enter a valid choice");
         Sleep(1300);
         return 0;
+    }else if(player_num==1 && strcmp(player[0].name,list[choice-1].name)==0){
+        printf("user is token !");
+        Sleep(1300);
+        return 0;
     }else{
         player[player_num]=list[choice-1];
     }
@@ -444,9 +455,15 @@ int score_compare(const void * a1,const void * a2){
 }
 void print_users(){
     for(int i=0;i<list_length;i++){
-        printf("\t%d)%s\t%d\n",i,list[i].name,list[i].score);
+        printf("\t%d)%s\t%d\n",i+1,list[i].name,list[i].score);
     }
-    return;
+
+}
+void save_users(){
+    mkdir("save");
+    FILE * fp=fopen("save/users","w");
+    fwrite(list,list_length,sizeof(struct user),fp);
+    fclose(fp);
 }
 struct node {
     struct ship sh;
