@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <math.h>
+#include <time.h>
 
 
 //defenition:
@@ -68,6 +69,7 @@ void put_ships_manual(int player_num);
 void print_map(int map[10][10]);
 int check_ship_placement(struct ship sh1, int player_num);
 void place_ship_in_main_map(struct ship sh1, int player_num);
+void put_ships_auto(int player_num);
 
 //main:
 
@@ -136,6 +138,7 @@ int main() {
                         break;
                     case 2:
                         //auto
+                        put_ships_auto(0);
 
                         break;
 
@@ -191,6 +194,7 @@ int main() {
                         break;
                     case 2:
                         //auto
+                        put_ships_auto(1);
 
                         break;
 
@@ -254,6 +258,7 @@ int main() {
                         break;
                     case 2:
                         //auto
+                        put_ships_auto(0);
 
                         break;
 
@@ -305,8 +310,9 @@ int main() {
                     qsort(list, list_length, sizeof(struct user), score_compare);
                     print_users();
                     Sleep(1300);
-                    printf("\npress enter to back to the main menu");
+                    printf("\npress enter to back to the main menu ");
                     getchar();
+                    fflush(stdin);
                 }
 
 
@@ -677,17 +683,20 @@ int get_num(){
     int bool=1;
 
     scanf("%s",buff);
-    for(int i=0;buff[i]!='\0';i++){
+    fflush(stdin);
+    for(int i=0;i<10 && buff[i]!='\0'  ;i++){
         if(isdigit(buff[i])==0)
                 bool=0;
 
     }
     if(bool==0){
+
         return -1;
 
     }else {
         int choice ;
         sscanf(buff,"%d",&choice);
+        
         return choice;
     }
 
@@ -752,5 +761,49 @@ void place_ship_in_main_map(struct ship sh1, int player_num){
         }
     }
 
+
+}
+void put_ships_auto(int player_num){
+    cls();
+    print_menu_topic();
+    int i=0;
+    srand(time(NULL));
+    struct ship sh1;
+    while (i<10){
+        while (1){
+            sh1.length=ships_length[i];
+            sh1.p1.i=rand()%10;
+            sh1.p1.j=rand()%10;
+            int h_or_v=rand()%2;
+            if(h_or_v==0){
+                sh1.p2.i=sh1.p1.i;
+                sh1.p2.j=sh1.p1.j+sh1.length-1;
+            }else{
+                sh1.p2.j=sh1.p1.j;
+                sh1.p2.i=sh1.p1.i+sh1.length-1;
+            }
+            if(check_ship_placement(sh1,player_num)){
+                place_ship_in_main_map(sh1,player_num);
+                if(i==0){
+                    insert_first(sh1);
+                    h[player_num]=head;
+                } else{
+                    head=h[player_num];
+                    insert_at_end(sh1);
+                }
+                i++;
+                break;
+
+            }
+
+        }
+    }
+    printf("\n%s's map :\n",player[player_num].name);
+    print_map(map[player_num].main);
+    Sleep(1300);
+    fflush(stdin);
+    printf("\npress enter to continue ");
+    getchar();
+    fflush(stdin);
 
 }
