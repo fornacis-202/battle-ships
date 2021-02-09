@@ -27,6 +27,8 @@ struct user * list;
 int list_length ;
 int ships_length[10]={5,3,3,2,2,2,1,1,1,1};
 struct node * h[2];
+int ingame_score[2];
+
 
 
 
@@ -69,17 +71,32 @@ void put_ships_manual(int player_num);
 void print_map(int map[10][10]);
 int check_ship_placement(struct ship sh1, int player_num);
 void place_ship_in_main_map(struct ship sh1, int player_num);
-void put_ships_auto(int player_num);
+void put_ships_auto(int player_num,int show_bool);
+void game_with_friend(int turn);
+void map_initialize(int map[10][10],int init);
+int check_shoot(int turn,int i,int j);
+int apply_shoot(int turn,int i,int j);
+void apply_completeness(int turn);
+void update_score(struct user plr);
+void game_with_bot(int turn);
+int check_explosion(int turn,int i,int j);
+void bot_i_and_j(int *i,int *j);
+
 
 //main:
 
 int main() {
+
     get_user();
     cls();
     int choice;
     print_theme();
     main_menu:
     while (1) {
+        map_initialize(map[0].show,-1);
+        map_initialize(map[1].show,-1);
+        map_initialize(map[0].main,0);
+        map_initialize(map[1].main,0);
         print_menu();
         choice = get_num();
         switch (choice) {
@@ -138,7 +155,7 @@ int main() {
                         break;
                     case 2:
                         //auto
-                        put_ships_auto(0);
+                        put_ships_auto(0,1);
 
                         break;
 
@@ -194,11 +211,15 @@ int main() {
                         break;
                     case 2:
                         //auto
-                        put_ships_auto(1);
+                        put_ships_auto(1,1);
 
                         break;
 
                 }
+                game_with_friend(0);
+                update_score(player[0]);
+                update_score(player[1]);
+                save_users();
 
 
 
@@ -229,7 +250,7 @@ int main() {
                             goto play_with_bot;
                         }
 
-                        while(chose_user(1)==0);
+                        while(chose_user(0)==0);
 
                         break;
                     case 2:
@@ -258,11 +279,16 @@ int main() {
                         break;
                     case 2:
                         //auto
-                        put_ships_auto(0);
+                        put_ships_auto(0,1);
 
                         break;
 
                 }
+                strcpy(player[1].name,"bot");
+                put_ships_auto(1,0);
+                game_with_bot(0);
+                update_score(player[0]);
+                save_users();
 
                 break;
             case 3:
@@ -306,11 +332,10 @@ int main() {
                     Sleep(1300);
 
                 }else {
-                    fflush(stdin);
-                    qsort(list, list_length, sizeof(struct user), score_compare);
                     print_users();
                     Sleep(1300);
                     printf("\npress enter to back to the main menu ");
+                    fflush(stdin);
                     getchar();
                     fflush(stdin);
                 }
@@ -484,12 +509,14 @@ int score_compare(const void * a1,const void * a2){
 
 }
 void print_users(){
+    qsort(list, list_length, sizeof(struct user), score_compare);
     for(int i=0;i<list_length;i++){
         printf("\t%d)%s\t%d\n",i+1,list[i].name,list[i].score);
     }
 
 }
 void save_users(){
+    qsort(list, list_length, sizeof(struct user), score_compare);
     mkdir("save");
     FILE * fp=fopen("save/users","w");
     fwrite(list,list_length,sizeof(struct user),fp);
@@ -524,15 +551,20 @@ void insert_at_end(struct ship sh){
 void delete(){
 
 
+
+
      if(current==head){
         head=head->next;
         free(current);
 
     }else {
+        for(previous=head;previous->next!=current;previous=previous->next);
         previous->next = current->next;
         free(current);
 
     }
+
+     current=NULL;
 }
 void put_ships_manual(int player_num){
     int i=0;
@@ -691,7 +723,7 @@ int get_num(){
     }
     if(bool==0){
 
-        return -1;
+        return -2;
 
     }else {
         int choice ;
@@ -763,7 +795,7 @@ void place_ship_in_main_map(struct ship sh1, int player_num){
 
 
 }
-void put_ships_auto(int player_num){
+void put_ships_auto(int player_num,int show_bool){
     cls();
     print_menu_topic();
     int i=0;
@@ -798,12 +830,362 @@ void put_ships_auto(int player_num){
 
         }
     }
-    printf("\n%s's map :\n",player[player_num].name);
-    print_map(map[player_num].main);
-    Sleep(1300);
-    fflush(stdin);
-    printf("\npress enter to continue ");
-    getchar();
-    fflush(stdin);
+    if(show_bool) {
+        printf("\n%s's map :\n", player[player_num].name);
+        print_map(map[player_num].main);
+        Sleep(1300);
+        fflush(stdin);
+        printf("\npress enter to continue ");
+        getchar();
+        fflush(stdin);
+    }
 
+}
+void game_with_friend(int turn) {
+    int game_bool = 1;
+    int turn_bool;
+    while (game_bool) {
+        turn = turn % 2;
+        cls();
+        print_menu_topic();
+        printf("\n %s's score: %d\t\t\t\t%s's score: %d\n", player[0].name, ingame_score[0], player[1].name,ingame_score[1]);
+        printf("\n %s's turn: \n", player[turn].name);
+        print_map(map[(turn+1)%2].show);
+        printf("\n chose a point to shoot!\nenter i (row) and j (column) : \n");
+        int i = get_num();
+        int j = get_num();
+        if (check_shoot((turn+1)%2, i, j)) {
+            turn_bool = apply_shoot((turn+1)%2, i, j);
+            apply_completeness((turn+1)%2);
+            cls();
+            print_menu_topic();
+            printf("\n %s's score: %d\t\t\t\t%s's score: %d\n", player[0].name, ingame_score[0], player[1].name,
+                   ingame_score[1]);
+            printf("\n %s's move : \n", player[turn].name);
+            print_map(map[(turn+1)%2].show);
+            Sleep(1300);
+            printf("1)continue\n2)save the game and quit\n");
+            int choice;
+            do {
+                choice = get_num();
+                if (choice == 2) {
+                    //save
+                    game_bool = 0;
+                } else if (choice != 1) {
+                    printf("enter a valid choice ");
+                    Sleep(1300);
+                    printf("\r                               ");
+                }
+            } while (!(choice == 1 || choice == 2));
+
+            if (turn_bool == 0) {
+                turn++;
+            }
+
+        } else {
+            printf("the point is unavailable\n");
+            Sleep(1300);
+        }
+        if (h[0] == NULL || h[1] == NULL)
+            game_bool = 0;
+
+
+    }
+    if (h[0] == NULL) {
+        cls();
+        print_menu_topic();
+        printf("\n\tgame is over !\n\n\t%s wins!", player[0].name);
+        player[0].score += ingame_score[0];
+        player[1].score += ingame_score[1] / 2;
+
+    } else if (h[1] == NULL) {
+        cls();
+        print_menu_topic();
+        printf("\n\tgame is over !\n\n\t%s wins!", player[1].name);
+        player[1].score += ingame_score[1];
+        player[0].score += ingame_score[0] / 2;
+
+    }
+}
+void map_initialize(int m[10][10] , int init){
+    for(int i=0;i<10;i++){
+        for(int j=0;j<10;j++){
+            m[i][j]=init;
+        }
+    }
+}
+int check_shoot(int turn,int i,int j){
+
+       if(i<=9 && i>= 0 && j<=9 && j>=0){
+           if(map[turn].show[i][j]==-1)
+               return 1;
+       }
+    return 0;
+
+
+}
+int apply_shoot(int turn,int i,int j){
+
+    if(map[turn].main[i][j]==3) {
+        map[turn].show[i][j] = 1;
+        ingame_score[(turn+1)%2]++;
+        return 1;
+    }
+    else if(map[turn].main[i][j]==0)
+        map[turn].show[i][j]=0;
+    return 0;
+
+}
+void apply_completeness(int turn){
+
+    head=h[turn];
+    int loop_bool=1;
+    for(current=head; current!=NULL;current=current->next){
+        struct ship sh1 = current->sh;
+        int bool;
+        bool=1;
+        if(sh1.p1.i==sh1.p2.i){
+
+            int t = (sh1.p2.j-sh1.p1.j >=0) ? 1 : -1;
+            while (sh1.p2.j!=sh1.p1.j-t){
+                if(map[turn].show[sh1.p1.i][sh1.p1.j]!=1) {
+                    bool = 0;
+                    break;
+                }
+                sh1.p1.j += t;
+            }
+            if(bool==1){
+                sh1 = current->sh;
+                sh1.p1.j-=t;
+                while (sh1.p2.j!=sh1.p1.j-2*t){
+                    map[turn].show[sh1.p1.i][sh1.p1.j]=2;
+
+                    if(sh1.p1.i + 1 <=9)
+                        map[turn].show[sh1.p1.i+1][sh1.p1.j]=0;
+
+                    if(sh1.p1.i - 1 >=0)
+                        map[turn].show[sh1.p1.i-1][sh1.p1.j]=0;
+
+
+                    sh1.p1.j +=t;
+                }
+                sh1 = current->sh;
+                map[turn].show[sh1.p1.i][sh1.p1.j - t]=0;
+                map[turn].show[sh1.p2.i][sh1.p2.j + t]=0;
+                delete();
+                h[turn]=head;
+                loop_bool=0;
+                ingame_score[(turn+1)%2]+= 25/sh1.length;
+
+            }
+        }else if(sh1.p1.j==sh1.p2.j){
+            int t = (sh1.p2.i-sh1.p1.i >=0)? 1 : -1 ;
+            while (sh1.p2.i!=sh1.p1.i-t){
+                if(map[turn].show[sh1.p1.i][sh1.p1.j]!=1) {
+                    bool = 0;
+                    break;
+                }
+                sh1.p1.i += t;
+            }
+            if(bool==1){
+                sh1 = current->sh;
+                sh1.p1.i-=t;
+                while (sh1.p2.i!=sh1.p1.i-2*t){
+                    map[turn].show[sh1.p1.i][sh1.p1.j]=2;
+
+                    if(sh1.p1.j + 1 <=9)
+                        map[turn].show[sh1.p1.i][sh1.p1.j+1]=0;
+
+                    if(sh1.p1.j - 1 >=0)
+                        map[turn].show[sh1.p1.i][sh1.p1.j-1]=0;
+
+
+                    sh1.p1.i +=t;
+                }
+                sh1 = current->sh;
+                map[turn].show[sh1.p1.i- t][sh1.p1.j ]=0;
+                map[turn].show[sh1.p2.i+ t][sh1.p2.j ]=0;
+                delete();
+                h[turn]=head;
+                loop_bool=0;
+                ingame_score[(turn+1)%2]+= 25/sh1.length;
+
+            }
+
+        }
+        if(loop_bool==0)
+            break;
+
+
+    }
+}
+void update_score(struct user plr){
+    for(int i=0;i<list_length;i++){
+        if(strcmp(plr.name,list[i].name)){
+            list[i]=plr;
+            break;
+        }
+    }
+}
+void game_with_bot(int turn){
+    int game_bool = 1;
+    int turn_bool;
+    int i,j;
+    while (game_bool) {
+        turn = turn % 2;
+        if(turn==0) {
+
+            cls();
+            print_menu_topic();
+            printf("\n %s's score: %d\t\t\t\t%s's score: %d\n", player[0].name, ingame_score[0], player[1].name,
+                   ingame_score[1]);
+            printf("\n %s's turn: \n", player[turn].name);
+            print_map(map[(turn + 1) % 2].show);
+            printf("\n chose a point to shoot!\nenter i (row) and j (column) : \n");
+            i = get_num();
+            j = get_num();
+        }else{
+            bot_i_and_j(&i,&j);
+
+        }
+        if (check_shoot((turn+1)%2, i, j)) {
+            turn_bool = apply_shoot((turn+1)%2, i, j);
+            apply_completeness((turn+1)%2);
+            cls();
+            print_menu_topic();
+            printf("\n %s's score: %d\t\t\t\t%s's score: %d\n", player[0].name, ingame_score[0], player[1].name,
+                   ingame_score[1]);
+            printf("\n %s's move : \n", player[turn].name);
+            print_map(map[(turn+1)%2].show);
+            Sleep(1300);
+            printf("1)continue\n2)save the game and quit\n");
+            int choice;
+            do {
+                choice = get_num();
+                if (choice == 2) {
+                    //save
+                    game_bool = 0;
+                } else if (choice != 1) {
+                    printf("enter a valid choice ");
+                    Sleep(1300);
+                    printf("\r                               ");
+                }
+            } while (!(choice == 1 || choice == 2));
+
+            if (turn_bool == 0) {
+                turn++;
+            }
+
+        } else {
+            printf("the point is unavailable\n");
+            Sleep(1300);
+        }
+        if (h[0] == NULL || h[1] == NULL)
+            game_bool = 0;
+
+
+    }
+    if (h[0] == NULL) {
+        cls();
+        print_menu_topic();
+        printf("\n\tgame is over !\n\n\t%s wins!\n", player[0].name);
+        player[0].score += ingame_score[0];
+        Sleep(1300);
+        printf("press enter to continue ");
+        fflush(stdin);
+        getchar();
+        fflush(stdin);
+
+
+    } else if (h[1] == NULL) {
+        cls();
+        print_menu_topic();
+        printf("\n\tgame is over !\n\n\t%s wins!", player[1].name);
+        player[0].score += ingame_score[0] / 2;
+        Sleep(1300);
+        printf("press enter to continue ");
+        fflush(stdin);
+        getchar();
+        fflush(stdin);
+
+    }
+
+}
+int check_explosion(int turn,int i,int j){
+
+    if(i<=9 && i>= 0 && j<=9 && j>=0){
+        if(map[turn].show[i][j]==1)
+            return 1;
+    }
+    return 0;
+
+
+}
+void bot_i_and_j(int *i,int *j){
+    int i2;
+    int j2;
+    for(int i2=0;i2<10;i2++){
+        for(int j2=0;j2<10;j2++)
+            if(check_explosion(0,i2,j2)){
+                if(check_explosion(0,i2+1,j2)){
+                    if(check_shoot(0,i2-1,j2)){
+                        *i=i2-1;
+                        *j=j2;
+                        return;
+                    }
+
+                }else if (check_explosion(0,i2-1,j2)){
+                    if(check_shoot(0,i2+1,j2)){
+                        *i=i2+1;
+                        *j=j2;
+                        return;
+                    }
+
+                }else if (check_explosion(0,i2,j2+1)){
+                    if(check_shoot(0,i2,j2-1)){
+                        *i=i2;
+                        *j=j2-1;
+                        return;
+                    }
+
+                }else if (check_explosion(0,i2,j2-1)){
+                    if(check_shoot(0,i2,j2+1)){
+                        *i=i2;
+                        *j=j2+1;
+                        return;
+                    }
+
+                }else{
+                    if(check_shoot(0,i2,j2+1)){
+                        *i=i2;
+                        *j=j2+1;
+                        return;
+                    }else if(check_shoot(0,i2,j2-1)){
+                        *i=i2;
+                        *j=j2-1;
+                        return;
+                    }else if(check_shoot(0,i2+1,j2)){
+                        *i=i2+1;
+                        *j=j2;
+                        return;
+                    }else if(check_shoot(0,i2-1,j2)){
+                        *i=i2-1;
+                        *j=j2;
+                        return;
+                    }
+
+                }
+            }
+    }
+    srand(time(NULL));
+    while (1){
+        i2=rand()%10;
+        j2=rand()%10;
+        if(check_shoot(0,i2,j2)){
+            *i=i2;
+            *j=j2;
+            break;
+        }
+
+    }
 }
