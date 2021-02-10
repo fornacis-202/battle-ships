@@ -11,7 +11,7 @@
 
 #define DEFAULT 246
 #define GREEN 47
-#define GOLDEN 111
+#define GOLD 111
 #define DARK 6
 #define W 191
 #define E 231
@@ -93,6 +93,7 @@ int load_game(int file_num);
 int load_2users(FILE * fp);
 int load_maps(FILE * fp);
 void load_ships(FILE * fp);
+int find_last_game();
 //main:
 
 int main() {
@@ -325,16 +326,29 @@ int main() {
 
                     }
                     if(load_game(choice)){
-                        if(strcpy(player[1].name,"bot")){
+                        if(strcmp(player[1].name,"bot")==0){
                             game_with_bot();
                         }else{
                             game_with_friend();
                         }
                     }
-
                     break;
                     case 4:
                         //load last game
+                        cls();
+                        print_menu_topic();
+                        if(find_last_game()==0){
+                            printf("\n\n\tno saved game!\n");
+                            Sleep(2000);
+                        }else{
+                            if(load_game(find_last_game())){
+                                if(strcmp(player[1].name,"bot")==0){
+                                    game_with_bot();
+                                }else{
+                                    game_with_friend();
+                                }
+                            }
+                        }
 
 
                         break;
@@ -445,8 +459,8 @@ void change_theme(int * theme){
          printf("1)Default\n");
          change_txt_color(GREEN);
          printf("2)Green\n");
-         change_txt_color(GOLDEN);
-         printf("3)Golden\n");
+         change_txt_color(GOLD);
+         printf("3)Gold\n");
          change_txt_color(DARK);
          printf("4)Dark mode\n");
 
@@ -461,7 +475,7 @@ void change_theme(int * theme){
                 return;
                 break;
             case 3:
-                *theme=GOLDEN;
+                *theme=GOLD;
                 return;
                 break;
             case 4:
@@ -1441,4 +1455,22 @@ void load_ships(FILE * fp){
             insert_at_end(sh1);
         }
     }
+}
+int find_last_game(){
+
+
+    FILE * fp =fopen("file names","r");
+    if(fp==NULL)
+        return 0;
+    char game_name[70];
+    int i=0;
+    while (1){
+        fgets(game_name,70,fp);
+        if(feof(fp))
+            return i;
+        i++;
+
+
+    }
+
 }
