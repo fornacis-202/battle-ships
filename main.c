@@ -514,7 +514,7 @@ int make_user(int player_num){
     cls();
     print_menu_topic();
     printf("\nnew user:\n\tenter your user name :");
-    getchar();
+    fflush(stdin);
     gets(username);
 
     for(int i=0;i<list_length;i++){
@@ -565,7 +565,7 @@ int score_compare(const void * a1,const void * a2){
 void print_users(){
     qsort(list, list_length, sizeof(struct user), score_compare);
     for(int i=0;i<list_length;i++){
-        printf("\t%d)%s\t%d\n",i+1,list[i].name,list[i].score);
+        printf("\t%d)%15s\t%d\n",i+1,list[i].name,list[i].score);
     }
 
 }
