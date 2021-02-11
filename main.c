@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <math.h>
+
 #include <time.h>
 
 
@@ -19,6 +19,7 @@
 #define S 140
 #define Q 135
 #define MAP 112
+
 
 //global variables:
 
@@ -122,7 +123,7 @@ int main() {
                 while (!(choice == 1 || choice == 2)) {
                     cls();
                     print_menu_topic();
-                    printf("\nfirst player:\n\tchose user:\n\t\t1)chose from available users\n\t\t2)new use\n");
+                    printf("\nfirst player:\n\tchoose user:\n\t\t1)choose from available users\n\t\t2)new use\n");
                     choice = get_num();
                     if (!(choice == 1 || choice == 2)) {
                         printf("please enter a valid choice\n");
@@ -180,7 +181,7 @@ int main() {
                 while (!(choice == 1 || choice == 2)) {
                     cls();
                     print_menu_topic();
-                    printf("\nsecond player:\n\tchose user:\n\t\t1)chose from available users\n\t\t2)new use\n");
+                    printf("\nsecond player:\n\tchoose user:\n\t\t1)choose from available users\n\t\t2)new use\n");
                     choice = get_num();
                     if (!(choice == 1 || choice == 2)) {
                         printf("please enter a valid choice\n");
@@ -243,7 +244,7 @@ int main() {
                 while (!(choice == 1 || choice == 2)) {
                     cls();
                     print_menu_topic();
-                    printf("\nhuman player:\n\tchose user:\n\t\t1)chose from available users\n\t\t2)new use\n");
+                    printf("\nhuman player:\n\tchoose user:\n\t\t1)choose from available users\n\t\t2)new use\n");
                     choice = get_num();
                     if (!(choice == 1 || choice == 2)) {
                         printf("please enter a valid choice\n");
@@ -448,7 +449,7 @@ void print_menu_topic(){
 void print_menu(){
     cls();
     print_menu_topic();
-    printf("\n\nChose:\n1) Play with a friend\n2) Play whit bot\n3) Load game\n4) Load last game\n5) Setting\n6) Score board\n7) Exit\n");
+    printf("\n\nChoose:\n1) Play with a friend\n2) Play with bot\n3) Load game\n4) Load last game\n5) Setting\n6) Score board\n7) Exit\n");
 
 }
 void change_theme(int * theme){
@@ -543,7 +544,7 @@ int chose_user(int player_num){
     cls();
     print_menu_topic();
     print_users();
-    printf("\nchose user:\n");
+    printf("\nchoose user:\n");
 
     scanf("%d",&choice);
     if(choice>list_length || choice<=0){
@@ -1393,7 +1394,7 @@ int save_ships(char file_name[70]){
 int print_game_names(){
     cls();
     print_menu_topic();
-    printf("\nchose:\n");
+    printf("\nchoose:\n");
     FILE * fp =fopen("file names","r");
     if(fp==NULL)
         return 0;
