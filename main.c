@@ -94,9 +94,11 @@ int load_2users(FILE * fp);
 int load_maps(FILE * fp);
 void load_ships(FILE * fp);
 int find_last_game();
+
 //main:
 
 int main() {
+
 
     get_user();
     cls();
@@ -795,14 +797,16 @@ int check_ship_placement(struct ship sh1, int player_num){
         int t = (sh1.p2.j-sh1.p1.j >=0) ? 1 : -1;
         sh1.p1.j-=t;
         while (sh1.p2.j!=sh1.p1.j-2*t){
-            if(map[player_num].main[sh1.p1.i][sh1.p1.j]!=0)
-                return 0;
-            if(sh1.p1.i + 1 <=9)
-                if(map[player_num].main[sh1.p1.i+1][sh1.p1.j]!=0)
+            if(sh1.p1.j <=9 && sh1.p1.j>=0) {
+                if (map[player_num].main[sh1.p1.i][sh1.p1.j] != 0)
                     return 0;
-            if(sh1.p1.i - 1 >=0)
-                if(map[player_num].main[sh1.p1.i-1][sh1.p1.j]!=0)
-                    return 0;
+                if (sh1.p1.i + 1 <= 9)
+                    if (map[player_num].main[sh1.p1.i + 1][sh1.p1.j] != 0)
+                        return 0;
+                if (sh1.p1.i - 1 >= 0)
+                    if (map[player_num].main[sh1.p1.i - 1][sh1.p1.j] != 0)
+                        return 0;
+            }
 
             sh1.p1.j +=t;
         }
@@ -813,14 +817,16 @@ int check_ship_placement(struct ship sh1, int player_num){
         int t = (sh1.p2.i-sh1.p1.i >=0)? 1 : -1 ;
         sh1.p1.i -=t;
         while (sh1.p2.i!=sh1.p1.i-2*t){
-            if(map[player_num].main[sh1.p1.i][sh1.p1.j]!=0)
-                return 0;
-            if(sh1.p1.j + 1 <=9)
-                if(map[player_num].main[sh1.p1.i][sh1.p1.j+1]!=0)
+            if(sh1.p1.i<=9 && sh1.p1.i>=0) {
+                if (map[player_num].main[sh1.p1.i][sh1.p1.j] != 0)
                     return 0;
-            if(sh1.p1.j - 1 >=0)
-                if(map[player_num].main[sh1.p1.i][sh1.p1.j-1]!=0)
-                    return 0;
+                if (sh1.p1.j + 1 <= 9)
+                    if (map[player_num].main[sh1.p1.i][sh1.p1.j + 1] != 0)
+                        return 0;
+                if (sh1.p1.j - 1 >= 0)
+                    if (map[player_num].main[sh1.p1.i][sh1.p1.j - 1] != 0)
+                        return 0;
+            }
 
             sh1.p1.i +=t;
         }
@@ -899,7 +905,7 @@ void game_with_friend() {
     int game_bool = 1;
     int turn_bool;
     while (game_bool) {
-        turn = turn % 2;
+
         cls();
         print_menu_topic();
         printf("\n %s's score: %d\t\t\t\t%s's score: %d\n", player[0].name, player[0].score, player[1].name,player[1].score);
@@ -920,10 +926,15 @@ void game_with_friend() {
             Sleep(1300);
             printf("1)continue\n2)save the game and quit\n");
             int choice;
+            if (turn_bool == 0) {
+                turn++;
+                turn=turn%2;
+            }
             do {
                 choice = get_num();
                 if (choice == 2) {
                     //save
+                    save();
                     game_bool = 0;
                 } else if (choice != 1) {
                     printf("enter a valid choice ");
@@ -932,9 +943,7 @@ void game_with_friend() {
                 }
             } while (!(choice == 1 || choice == 2));
 
-            if (turn_bool == 0) {
-                turn++;
-            }
+
 
         } else {
             printf("the point is unavailable\n");
@@ -948,7 +957,7 @@ void game_with_friend() {
     if (h[1] == NULL) {
         cls();
         print_menu_topic();
-        printf("\n\tgame is over !\n\n\t%s wins!", player[0].name);
+        printf("\n\tgame is over !\n\n\t%s wins !\n\n", player[0].name);
 
         player[1].score = player[1].score / 2;
         Sleep(1300);
@@ -963,7 +972,7 @@ void game_with_friend() {
     } else if (h[0] == NULL) {
         cls();
         print_menu_topic();
-        printf("\n\tgame is over !\n\n\t%s wins!", player[1].name);
+        printf("\n\tgame is over !\n\n\t%s wins !\n\n", player[1].name);
 
         player[0].score = player[0].score / 2;
         Sleep(1300);
@@ -1030,7 +1039,7 @@ void apply_completeness(int turn){
                 sh1 = current->sh;
                 sh1.p1.j-=t;
                 while (sh1.p2.j!=sh1.p1.j-2*t){
-                    if(sh1.p2.j <=9 && sh1.p2.j>=0) {
+                    if(sh1.p1.j <=9 && sh1.p1.j>=0) {
                         map[turn].show[sh1.p1.i][sh1.p1.j] = 2;
 
                         if (sh1.p1.i + 1 <= 9)
@@ -1044,8 +1053,10 @@ void apply_completeness(int turn){
                     sh1.p1.j +=t;
                 }
                 sh1 = current->sh;
-                map[turn].show[sh1.p1.i][sh1.p1.j - t]=0;
-                map[turn].show[sh1.p2.i][sh1.p2.j + t]=0;
+                if(sh1.p1.j-t <=9 && sh1.p1.j-t>=0)
+                    map[turn].show[sh1.p1.i][sh1.p1.j - t]=0;
+                if(sh1.p2.j+t <=9 && sh1.p2.j+t>=0)
+                    map[turn].show[sh1.p2.i][sh1.p2.j + t]=0;
                 delete();
                 h[turn]=head;
                 loop_bool=0;
@@ -1080,8 +1091,11 @@ void apply_completeness(int turn){
                     sh1.p1.i +=t;
                 }
                 sh1 = current->sh;
-                map[turn].show[sh1.p1.i- t][sh1.p1.j ]=0;
-                map[turn].show[sh1.p2.i+ t][sh1.p2.j ]=0;
+                if(sh1.p1.i-t<=9 && sh1.p1.i-t>=0)
+                     map[turn].show[sh1.p1.i- t][sh1.p1.j ]=0;
+
+                if(sh1.p2.i + t<=9 && sh1.p2.i + t>=0)
+                    map[turn].show[sh1.p2.i+ t][sh1.p2.j ]=0;
                 delete();
                 h[turn]=head;
                 loop_bool=0;
@@ -1098,7 +1112,7 @@ void apply_completeness(int turn){
 }
 void update_score(struct user plr){
     for(int i=0;i<list_length;i++){
-        if(strcmp(plr.name,list[i].name)){
+        if(strcmp(plr.name,list[i].name)==0){
             list[i].score+=plr.score;
             break;
         }
@@ -1109,7 +1123,7 @@ void game_with_bot(){
     int turn_bool;
     int i,j;
     while (game_bool) {
-        turn = turn % 2;
+
         if(turn==0) {
 
             cls();
@@ -1139,6 +1153,7 @@ void game_with_bot(){
             printf("1)continue\n2)save the game and quit\n");
             if (turn_bool == 0) {
                 turn++;
+                turn = turn % 2;
             }
             int choice;
             do {
@@ -1168,7 +1183,7 @@ void game_with_bot(){
     if (h[1] == NULL) {
         cls();
         print_menu_topic();
-        printf("\n\tgame is over !\n\n\t%s wins!\n", player[0].name);
+        printf("\n\tgame is over !\n\n\t%s wins!\n\n", player[0].name);
 
         Sleep(1300);
         printf("press enter to continue ");
@@ -1182,7 +1197,7 @@ void game_with_bot(){
     } else if (h[0] == NULL) {
         cls();
         print_menu_topic();
-        printf("\n\tgame is over !\n\n\t%s wins!", player[1].name);
+        printf("\n\tgame is over !\n\n\t%s wins!\n\n", player[1].name);
         player[0].score = player[0].score / 2;
         Sleep(1300);
         printf("press enter to continue ");
